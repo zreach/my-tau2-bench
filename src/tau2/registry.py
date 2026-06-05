@@ -54,7 +54,7 @@ from tau2.domains.telecom.environment import (
     get_tasks_split as telecom_domain_get_tasks_split,
 )
 from tau2.environment.environment import Environment
-from tau2.user.user_simulator import DummyUser, UserSimulator
+from tau2.user.user_simulator import DummyUser, LocalLLMUserSimulator, UserSimulator
 from tau2.user.user_simulator_base import FullDuplexUser, HalfDuplexUser
 
 
@@ -281,6 +281,7 @@ try:
     logger.debug("Registering default components...")
     # User implementations
     registry.register_user(UserSimulator, "user_simulator")
+    registry.register_user(LocalLLMUserSimulator, "local_user_simulator")
     registry.register_user(DummyUser, "dummy_user")
     try:
         from tau2.user.user_simulator_streaming import VoiceStreamingUserSimulator

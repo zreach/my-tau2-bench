@@ -1,3 +1,4 @@
+import os
 from typing import Generic, Optional, Tuple, TypeVar
 
 from loguru import logger
@@ -264,6 +265,49 @@ class UserSimulator(
                     )
                 )
         return user_message
+
+
+class LocalLLMUserSimulator(UserSimulator):
+    """User simulator backed by a local OpenAI-compatible LLM endpoint.
+
+    This is a convenience wrapper around UserSimulator. It keeps the existing
+    LiteLLM path, while making local user simulation configurable through
+    TAU2_LOCAL_USER_* environment variables.
+    """
+
+    def __init__(
+        self,
+        llm: Optional[str] = None,
+        instructions: Optional[str] = None,
+        tools: Optional[list[Tool]] = None,
+        llm_args: Optional[dict] = None,
+        persona_config: Optional[PersonaConfig] = None,
+    ):
+        merged_llm_args = dict(llm_args or {})
+
+        local_model = llm or os.getenv("TAU2_LOCAL_USER_MODEL")
+        if not local_model:
+            raise ValueError(
+                "LocalLLMUserSimulator requires an llm argument or "
+                "TAU2_LOCAL_USER_MODEL."
+            )
+        if not local_model.startswith("openai/"):
+            local_model = f"openai/{local_model}"
+
+        api_base = os.getenv("TAU2_LOCAL_USER_API_BASE")
+        api_key = os.getenv("TAU2_LOCAL_USER_API_KEY", "EMPTY")
+        if api_base and "api_base" not in merged_llm_args:
+            merged_llm_args["api_base"] = api_base
+        if api_key and "api_key" not in merged_llm_args:
+            merged_llm_args["api_key"] = api_key
+
+        super().__init__(
+            llm=local_model,
+            instructions=instructions,
+            tools=tools,
+            llm_args=merged_llm_args,
+            persona_config=persona_config,
+        )
 
 
 class DummyUser(UserSimulator):
